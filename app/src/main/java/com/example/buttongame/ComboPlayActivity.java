@@ -11,207 +11,157 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
 
 import com.example.buttongame.data.Combo;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
+/**
+ * The activity class responsible for handling the gameplay of a combo challenge.
+ * It displays a sequence of arrow images and responds to user inputs by comparing them to the expected sequence.
+ */
 public class ComboPlayActivity extends AppCompatActivity {
 
-    ImageView img1;
-    ImageView img2;
-    ImageView img3;
-    ImageView img4;
-    ImageView img5;
+    private ImageView img1, img2, img3, img4, img5;
+    private int upArrow, downArrow, leftArrow, rightArrow;
+    private int starGold, starGrey;
 
-    int upArrow;
-    int downArrow;
-    int leftArrow;
-    int rightArrow;
+    private ImageButton topBtn, downBtn, leftBtn, rightBtn;
+    private TextView tvTitle;
 
-    int starGold;
+    private int totalScore, weight = 5, maximumScore = 0;
+    private int totalAvailableClicks = 4;
+    private int clickCounter = 1;
 
-    int starGrey;
+    private Combo combo;
+    private ArrayList<Integer> imagesResource;
+    private Set<String> completedCombos, failedCombos;
 
-    ImageButton topBtn;
-    ImageButton downBtn;
-    ImageButton leftBtn;
-    ImageButton rightBtn;
-    TextView tvTitle;
+    private Button contBtn;
 
-    int totalScore;
-    int weight = 5;
-    int maximumScore = 0;
-
-    int totalAvailableClicks = 4;
-
-    Combo combo;
-
-    int clickCounter = 1;
-
-    ArrayList<Integer> imagesResource;
-    Set<String> completedCombos;
-    Set<String> failedCombos;
-
-    Button contBtn;
-
+    /**
+     * Called when the activity is starting. This is where most initialization should go.
+     * @param savedInstanceState If the activity is being re-initialized after previously being shut down
+     *                           then this Bundle contains the data it most recently supplied in onSaveInstanceState(Bundle).
+     *                           Otherwise it is null.
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_combo_play);
 
+        // Initialize array to hold image resources
         imagesResource = new ArrayList<>();
 
-        //receive intent data
+        // Retrieve Combo object passed from previous activity
         Intent intent = getIntent();
         combo = (Combo) intent.getSerializableExtra("Combo");
 
-
-        //add images
+        // Add images from the combo to the resource list
         imagesResource.add(combo.getImage1());
         imagesResource.add(combo.getImage2());
         imagesResource.add(combo.getImage3());
         imagesResource.add(combo.getImage4());
         imagesResource.add(combo.getImage5());
-
+        // Initialize resource IDs for arrows and stars
         upArrow = R.drawable.up_arrow;
         downArrow = R.drawable.down_arrow;
         leftArrow = R.drawable.left_arrow;
         rightArrow = R.drawable.right_arrow;
-
         starGold = android.R.drawable.btn_star_big_on;
         starGrey = android.R.drawable.btn_star_big_off;
 
+        // Set up UI elements
         tvTitle = findViewById(R.id.combo_title);
         tvTitle.setText(combo.getTitle());
 
-        //set image views
         img1 = findViewById(R.id.img1);
         img1.setImageResource(combo.getImage1());
-
         img2 = findViewById(R.id.img2);
         img2.setImageResource(combo.getImage2());
-
         img3 = findViewById(R.id.img3);
         img3.setImageResource(combo.getImage3());
-
         img4 = findViewById(R.id.img4);
         img4.setImageResource(combo.getImage4());
+        img5 = findViewById(R.id.img5);
+        if (combo.getImage5() > 0) {
+            img5.setImageResource(combo.getImage5());
+            totalAvailableClicks++;
+            maximumScore += weight;
+        }
 
+        // Calculate the maximum possible score
         maximumScore = weight * totalAvailableClicks;
 
-        img5 = findViewById(R.id.img5);
-        if(combo.getImage5() > 0){
-            totalAvailableClicks++;
-            maximumScore+= weight;
-            img5.setImageResource(combo.getImage5());
-        }
-        //handle button clicks
+        // Setup button handlers
         buttonHandler();
     }
 
-    private void buttonHandler(){
+    /**
+     * Initializes and sets onClick listeners for all interactive buttons on the screen.
+     */
+    private void buttonHandler() {
         topBtn = findViewById(R.id.topBtn);
         downBtn = findViewById(R.id.downBtn);
         leftBtn = findViewById(R.id.leftBtn);
         rightBtn = findViewById(R.id.rightBtn);
         contBtn = findViewById(R.id.cont_btn);
 
-        topBtn.setOnClickListener(v -> {
-            setStar(upArrow);
-        });
-
-        downBtn.setOnClickListener(v -> {
-            setStar(downArrow);
-        });
-
-        leftBtn.setOnClickListener(v -> {
-            setStar(leftArrow);
-        });
-
-        rightBtn.setOnClickListener(v -> {
-            setStar(rightArrow);
-        });
-
-        contBtn.setOnClickListener(v -> {
-            save();
-        });
+        // Register onClickListeners to handle arrow button presses
+        topBtn.setOnClickListener(v -> setStar(upArrow));
+        downBtn.setOnClickListener(v -> setStar(downArrow));
+        leftBtn.setOnClickListener(v -> setStar(leftArrow));
+        rightBtn.setOnClickListener(v -> setStar(rightArrow));
+        contBtn.setOnClickListener(v -> save());
     }
 
-   void setStar(int compareImg2){
+    /**
+     * Handles the logic of checking if the button pressed matches the expected sequence
+     * and updates the UI accordingly.
+     * @param compareImg2 The image resource id of the button pressed.
+     */
+    private void setStar(int compareImg2) {
+        if (totalAvailableClicks == clickCounter) {
+            Log.d("clickCounter", totalAvailableClicks + " => " + clickCounter);
+            contBtn.setVisibility(View.VISIBLE);
+        }
 
-       if(totalAvailableClicks == clickCounter) {
-           Log.d("clickCounter",String.valueOf(totalAvailableClicks) + " => " + clickCounter);
-           contBtn.setVisibility(View.VISIBLE);
-       }
+        if (totalAvailableClicks >= clickCounter) {
+            int compareImg1 = imagesResource.get(clickCounter - 1);
+            int star = starGrey;
+            if (compareImg1 == compareImg2) {
+                star = starGold;
+                totalScore += weight;
+            }
 
-       if(totalAvailableClicks >= clickCounter){
+            ImageView[] images = {img1, img2, img3, img4, img5};
+            if (clickCounter <= images.length) {
+                images[clickCounter - 1].setImageResource(star);
+            }
 
-           int compareImg1 = imagesResource.get(clickCounter - 1);
-           int star = starGrey;
-
-           if(compareImg1 == compareImg2){
-               star = starGold;
-               totalScore+=weight;
-           }
-
-           switch (clickCounter){
-               case 1:
-                   img1.setImageResource(star);
-                   break;
-               case 2:
-                   img2.setImageResource(star);
-                   break;
-               case 3:
-                   img3.setImageResource(star);
-                   break;
-
-               case 4:
-                   img4.setImageResource(star);
-                   break;
-
-               case 5:
-                   img5.setImageResource(star);
-                   break;
-           }
-
-           clickCounter++;
-       }
-
+            clickCounter++;
+        }
     }
 
-    void save(){
-        SharedPreferences pref = getApplicationContext().getSharedPreferences("ComboButtons", 0); // 0 - for private mode
+    /**
+     * Saves the outcome of the game to SharedPreferences and decides the next screen to navigate based on the attempt count.
+     */
+    private void save() {
+        SharedPreferences pref = getApplicationContext().getSharedPreferences("ComboButtons", MODE_PRIVATE);
         SharedPreferences.Editor editor = pref.edit();
 
         int currentTotalScore = pref.getInt("totalScore", 0);
-        int attemptCount = 0;
-        completedCombos = pref.getStringSet("completedCombos", null);
-        failedCombos = pref.getStringSet("failedCombos", null);
+        completedCombos = pref.getStringSet("completedCombos", new HashSet<>());
+        failedCombos = pref.getStringSet("failedCombos", new HashSet<>());
 
-        if(completedCombos == null){
-            completedCombos = new HashSet<>();
-        }else{
-            attemptCount += completedCombos.size();
-        }
+        int attemptCount = completedCombos.size() + failedCombos.size();
 
-        if(failedCombos == null){
-            failedCombos = new HashSet<>();
-        }else{
-            attemptCount += failedCombos.size();
-        }
-
-        if(totalScore == maximumScore){
+        if (totalScore == maximumScore) {
             completedCombos.add(String.valueOf(combo.getId()));
-        }else{
+        } else {
             failedCombos.add(String.valueOf(combo.getId()));
         }
 
@@ -222,19 +172,25 @@ public class ComboPlayActivity extends AppCompatActivity {
 
         Toast.makeText(this, "Completed task", Toast.LENGTH_LONG).show();
 
-        if(attemptCount < 4){
+        if (attemptCount < 4) {
             goToMainActivity();
-        }else{
+        } else {
             goToCongratulationsActivity();
         }
     }
 
-    void goToMainActivity(){
+    /**
+     * Navigates back to the main activity of the application.
+     */
+    private void goToMainActivity() {
         Intent intent = new Intent(this, Home.class);
         startActivity(intent);
     }
 
-    void goToCongratulationsActivity(){
+    /**
+     * Navigates to a congratulations screen upon successful completion of tasks.
+     */
+    private void goToCongratulationsActivity() {
         Intent intent = new Intent(this, CongratulationsActivity.class);
         startActivity(intent);
     }

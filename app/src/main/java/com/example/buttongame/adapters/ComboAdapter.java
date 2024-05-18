@@ -3,8 +3,6 @@ package com.example.buttongame.adapters;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.graphics.Color;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,28 +22,40 @@ import com.example.buttongame.data.Combo;
 import java.util.ArrayList;
 import java.util.Set;
 
+/**
+ * Adapter for managing a collection of Combo items in a RecyclerView.
+ * This adapter handles the creation of view holders, binding data to views,
+ * and setting up click listeners for each item to navigate to a gameplay activity.
+ */
 public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHolder> {
 
+    // List of all combos to be displayed.
     private final ArrayList<Combo> comboArrayList;
 
-    private Combo selectedCombo;
-
+    // Context in which the adapter is operating, usually the parent Activity or Fragment.
     private Context context;
 
+    // Lists to track completed and failed combos.
     ArrayList<String> completedCombos;
     ArrayList<String> failedCombo;
 
-    int compledIndx;
-
-    int failedIndx;
-
+    /**
+     * Constructor initializing the adapter with a list of combos.
+     * Logs the size of the combo list for debugging purposes.
+     *
+     * @param comboArrayList List of combos to be displayed.
+     */
     public ComboAdapter(ArrayList<Combo> comboArrayList){
         Log.d("ComboList Size","Combo list => " + comboArrayList.size());
         this.comboArrayList = comboArrayList;
     }
 
     /**
-     * The code below loads the layout and makes all the element on the layout accessible  via the view holder
+     * Inflates the row layout from XML and returns the holder.
+     *
+     * @param parent   ViewGroup into which the new view will be added after it is bound to an adapter position.
+     * @param viewType The view type of the new View.
+     * @return A new ViewHolder that holds a View of the given view type.
      */
     @NonNull
     @Override
@@ -55,18 +65,26 @@ public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHol
         return new ComboViewHolder(view);
     }
 
+    /**
+     * Binds data to the view holder at the specified position.
+     * This method also sets up the logic to handle clicks and navigates to the gameplay activity.
+     *
+     * @param holder   The view holder whose state should be updated.
+     * @param position The position of the item within the adapter's data set.
+     */
     @Override
     public void onBindViewHolder(@NonNull ComboAdapter.ComboViewHolder holder, int position) {
         boolean nextActivity = true;
-        SharedPreferences pref = this.context.getSharedPreferences("ComboButtons", 0); // 0 - for private mode
+        SharedPreferences pref = this.context.getSharedPreferences("ComboButtons", Context.MODE_PRIVATE);
         Set<String> completedTaskSet = pref.getStringSet("completedCombos", null);
         Set<String> failedTaskSet = pref.getStringSet("failedCombos", null);
+
         if(completedTaskSet != null){
-            completedCombos = new ArrayList<String>(completedTaskSet);
+            completedCombos = new ArrayList<>(completedTaskSet);
         }
 
         if(failedTaskSet != null){
-            failedCombo = new ArrayList<String>(failedTaskSet);
+            failedCombo = new ArrayList<>(failedTaskSet);
         }
 
         holder.tvTitle.setText(comboArrayList.get(position).getTitle());
@@ -77,7 +95,7 @@ public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHol
 
         int img5 = comboArrayList.get(position).getImage5();
         if(img5 > 0) {
-            holder.img5.setImageResource(comboArrayList.get(position).getImage5());
+            holder.img5.setImageResource(img5);
         }
 
         if(completedCombos != null && completedCombos.contains(String.valueOf(comboArrayList.get(position).getId()))){
@@ -90,36 +108,46 @@ public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHol
             nextActivity = false;
         }
 
-
         final boolean finalNextActivity = nextActivity;
         holder.itemView.setOnClickListener(v -> {
             if(!finalNextActivity){
                 Toast.makeText(this.context, "Task already completed", Toast.LENGTH_LONG).show();
             }else{
                 Intent intent = new Intent(this.context, ComboPlayActivity.class);
-                //here we are passing an instance of the Combo (with selected data) class to the next activity
-                intent.putExtra("Combo",comboArrayList.get(position));
+                intent.putExtra("Combo", comboArrayList.get(position));
                 this.context.startActivity(intent);
             }
         });
     }
 
+    /**
+     * Returns the total number of items in the data set held by the adapter.
+     *
+     * @return The total number of items in this adapter.
+     */
     @Override
     public int getItemCount() {
         return this.comboArrayList.size();
     }
-    public Combo getSelectedCombo() {
-        return selectedCombo;
-    }
-    public static  class ComboViewHolder extends RecyclerView.ViewHolder {
+
+    /**
+     * ViewHolder class for layout elements. This class holds all the UI elements that will be modified
+     * based on the data object it represents in the RecyclerView.
+     */
+    public static class ComboViewHolder extends RecyclerView.ViewHolder {
         TextView tvTitle;
         LinearLayout linearLayout;
-        ImageView  img1;
+        ImageView img1;
         ImageView img2;
         ImageView img3;
         ImageView img4;
         ImageView img5;
-        //Access the elements on the layout
+
+        /**
+         * Constructor for the ViewHolder, used in onCreateViewHolder method.
+         *
+         * @param itemView The root view of the list item layout.
+         */
         public ComboViewHolder(@NonNull View itemView) {
             super(itemView);
             tvTitle = itemView.findViewById(R.id.combo_title);
@@ -132,4 +160,3 @@ public class ComboAdapter extends RecyclerView.Adapter<ComboAdapter.ComboViewHol
         }
     }
 }
-
