@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Clicky Clicky Hero</string>
+    <string name="menu_restart">Restart</string>
+    <string name="correct_combos_var">Correct Combos: %1$d.</string>
+    <string name="correct_combos">Correct Combos: 0.</string>
+    <string name="end_game_congrats_text">You completed %1$d of %2$d combos, well done!</string>
+    <string name="end_game_over_text">You completed %1$d of %2$d combos.</string>
+    <string name="end_game_congrats">Congratulations</string>
+    <string name="end_game_over">Game over!</string>
+    <string name="total_score">Total Score</string>
+</resources>
